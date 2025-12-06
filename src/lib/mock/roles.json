@@ -1,0 +1,22 @@
+[
+  {
+    "id": "role_superadmin",
+    "name": "Super Admin",
+    "description": "Full system access with all permissions",
+    "permissions": [
+      "dashboard.view", "dashboard.widgets.revenue", "dashboard.widgets.pools", "dashboard.widgets.budgets", "dashboard.widgets.requests",
+      "users.view", "users.create", "users.edit", "users.delete", "users.assign_role",
+      "roles.view", "roles.create", "roles.edit", "roles.delete",
+      "revenue.view", "revenue.create", "revenue.allocate", "revenue.ledger",
+      "pools.view", "pools.create", "pools.edit", "pools.allocate", "pools.approve",
+      "budgets.view", "budgets.create", "budgets.approve.finance", "budgets.approve.md", "budgets.approve.board",
+      "disbursements.view", "disbursements.create", "disbursements.approve.dept", "disbursements.approve.finance", "disbursements.approve.coo", "disbursements.approve.md", "disbursements.pay", "disbursements.proof",
+      "projects.view", "projects.create", "projects.edit", "projects.phases", "projects.delays",
+      "contracts.view", "contracts.create", "contracts.edit", "contracts.milestones",
+      "vault.view", "vault.create", "vault.reveal", "vault.logs",
+      "reports.view", "reports.pools", "reports.cashflow", "reports.profitability", "reports.audit",
+      "settings.view", "settings.general", "settings.notifications", "settings.security"
+    ],
+    "created_at": "2024-01-01T00:00:00Z"
+  }
+]

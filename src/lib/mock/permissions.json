@@ -1,0 +1,71 @@
+[
+  { "key": "dashboard.view", "description": "View main dashboard", "module": "Dashboard" },
+  { "key": "dashboard.widgets.revenue", "description": "View revenue widget", "module": "Dashboard" },
+  { "key": "dashboard.widgets.pools", "description": "View pool balances widget", "module": "Dashboard" },
+  { "key": "dashboard.widgets.budgets", "description": "View budgets widget", "module": "Dashboard" },
+  { "key": "dashboard.widgets.requests", "description": "View pending requests widget", "module": "Dashboard" },
+  
+  { "key": "users.view", "description": "View users list", "module": "User Management" },
+  { "key": "users.create", "description": "Create new users", "module": "User Management" },
+  { "key": "users.edit", "description": "Edit user details", "module": "User Management" },
+  { "key": "users.delete", "description": "Delete users", "module": "User Management" },
+  { "key": "users.assign_role", "description": "Assign roles to users", "module": "User Management" },
+  
+  { "key": "roles.view", "description": "View roles list", "module": "Role Management" },
+  { "key": "roles.create", "description": "Create new roles", "module": "Role Management" },
+  { "key": "roles.edit", "description": "Edit role permissions", "module": "Role Management" },
+  { "key": "roles.delete", "description": "Delete roles", "module": "Role Management" },
+  
+  { "key": "revenue.view", "description": "View revenue records", "module": "Revenue" },
+  { "key": "revenue.create", "description": "Record new revenue", "module": "Revenue" },
+  { "key": "revenue.allocate", "description": "Allocate revenue to pools", "module": "Revenue" },
+  { "key": "revenue.ledger", "description": "View revenue ledger", "module": "Revenue" },
+  
+  { "key": "pools.view", "description": "View pool balances", "module": "Pool Management" },
+  { "key": "pools.create", "description": "Create new pools", "module": "Pool Management" },
+  { "key": "pools.edit", "description": "Edit pool settings", "module": "Pool Management" },
+  { "key": "pools.allocate", "description": "Set allocation percentages", "module": "Pool Management" },
+  { "key": "pools.approve", "description": "Approve pool allocations", "module": "Pool Management" },
+  
+  { "key": "budgets.view", "description": "View budgets", "module": "Budgets" },
+  { "key": "budgets.create", "description": "Create budget requests", "module": "Budgets" },
+  { "key": "budgets.approve.finance", "description": "Finance approval for budgets", "module": "Budgets" },
+  { "key": "budgets.approve.md", "description": "MD approval for budgets", "module": "Budgets" },
+  { "key": "budgets.approve.board", "description": "Board approval for budgets", "module": "Budgets" },
+  
+  { "key": "disbursements.view", "description": "View disbursement requests", "module": "Disbursements" },
+  { "key": "disbursements.create", "description": "Create disbursement request", "module": "Disbursements" },
+  { "key": "disbursements.approve.dept", "description": "Department leader approval", "module": "Disbursements" },
+  { "key": "disbursements.approve.finance", "description": "Finance validation", "module": "Disbursements" },
+  { "key": "disbursements.approve.coo", "description": "COO approval", "module": "Disbursements" },
+  { "key": "disbursements.approve.md", "description": "MD approval", "module": "Disbursements" },
+  { "key": "disbursements.pay", "description": "Process payment", "module": "Disbursements" },
+  { "key": "disbursements.proof", "description": "Upload payment proof", "module": "Disbursements" },
+  
+  { "key": "projects.view", "description": "View projects", "module": "Projects" },
+  { "key": "projects.create", "description": "Create projects", "module": "Projects" },
+  { "key": "projects.edit", "description": "Edit project details", "module": "Projects" },
+  { "key": "projects.phases", "description": "Manage project phases", "module": "Projects" },
+  { "key": "projects.delays", "description": "Log project delays", "module": "Projects" },
+  
+  { "key": "contracts.view", "description": "View contracts", "module": "Contracts" },
+  { "key": "contracts.create", "description": "Create contracts", "module": "Contracts" },
+  { "key": "contracts.edit", "description": "Edit contracts", "module": "Contracts" },
+  { "key": "contracts.milestones", "description": "Manage contract milestones", "module": "Contracts" },
+  
+  { "key": "vault.view", "description": "View password vault", "module": "Password Vault" },
+  { "key": "vault.create", "description": "Add credentials to vault", "module": "Password Vault" },
+  { "key": "vault.reveal", "description": "Reveal stored passwords", "module": "Password Vault" },
+  { "key": "vault.logs", "description": "View vault access logs", "module": "Password Vault" },
+  
+  { "key": "reports.view", "description": "View reports", "module": "Reports" },
+  { "key": "reports.pools", "description": "View pool balance reports", "module": "Reports" },
+  { "key": "reports.cashflow", "description": "View cash flow reports", "module": "Reports" },
+  { "key": "reports.profitability", "description": "View profitability reports", "module": "Reports" },
+  { "key": "reports.audit", "description": "View audit logs", "module": "Reports" },
+  
+  { "key": "settings.view", "description": "View settings", "module": "Settings" },
+  { "key": "settings.general", "description": "Manage general settings", "module": "Settings" },
+  { "key": "settings.notifications", "description": "Manage notification settings", "module": "Settings" },
+  { "key": "settings.security", "description": "Manage security settings", "module": "Settings" }
+]
