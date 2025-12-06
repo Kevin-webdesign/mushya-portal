@@ -1,0 +1,13 @@
+[
+  {
+    "id": "user_1",
+    "email": "admin@mushyagroup.com",
+    "name": "System Administrator",
+    "avatar": null,
+    "role_id": "role_superadmin",
+    "department": "IT",
+    "status": "active",
+    "created_at": "2024-01-01T00:00:00Z",
+    "last_login": "2024-12-06T09:00:00Z"
+  }
+]
