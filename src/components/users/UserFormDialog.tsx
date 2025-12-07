@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User, Role } from '@/types';
+import { User, Role, Department } from '@/types';
 import {
   Dialog,
   DialogContent,
@@ -19,16 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Loader2, User as UserIcon, Check } from 'lucide-react';
-
-const departments = [
-  'Engineering',
-  'Finance',
-  'Human Resources',
-  'Marketing',
-  'Operations',
-  'Sales',
-  'Administration',
-];
+import departmentsData from '@/lib/mock/departments.json';
 
 interface UserFormDialogProps {
   open: boolean;
@@ -47,28 +38,41 @@ export function UserFormDialog({
 }: UserFormDialogProps) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [department, setDepartment] = useState('');
+  const [departmentId, setDepartmentId] = useState('');
   const [roleId, setRoleId] = useState('');
   const [status, setStatus] = useState('active');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [departments, setDepartments] = useState<Department[]>([]);
 
   const isEditing = !!user;
+
+  useEffect(() => {
+    // Load departments
+    const stored = localStorage.getItem('mushya_departments');
+    if (stored) {
+      setDepartments(JSON.parse(stored));
+    } else {
+      setDepartments(departmentsData as Department[]);
+    }
+  }, []);
 
   useEffect(() => {
     if (user) {
       setName(user.name);
       setEmail(user.email);
-      setDepartment(user.department);
+      // Find department id by name
+      const dept = departments.find(d => d.name === user.department);
+      setDepartmentId(dept?.id || '');
       setRoleId(user.role_id);
       setStatus(user.status);
     } else {
       setName('');
       setEmail('');
-      setDepartment('');
+      setDepartmentId('');
       setRoleId('');
       setStatus('active');
     }
-  }, [user, open]);
+  }, [user, open, departments]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,12 +80,14 @@ export function UserFormDialog({
 
     await new Promise(resolve => setTimeout(resolve, 500));
 
+    const selectedDept = departments.find(d => d.id === departmentId);
+
     const newUser: User = {
       id: user?.id || `user_${Date.now()}`,
       name,
       email,
       avatar: user?.avatar || null,
-      department,
+      department: selectedDept?.name || '',
       role_id: roleId,
       status: status as 'active' | 'inactive' | 'suspended',
       last_login: user?.last_login || new Date().toISOString(),
@@ -134,13 +140,13 @@ export function UserFormDialog({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="department">Department</Label>
-              <Select value={department} onValueChange={setDepartment} required>
+              <Select value={departmentId} onValueChange={setDepartmentId} required>
                 <SelectTrigger>
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
                 <SelectContent>
                   {departments.map(dept => (
-                    <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                    <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -179,7 +185,7 @@ export function UserFormDialog({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting || !name || !email || !department || !roleId}>
+            <Button type="submit" disabled={isSubmitting || !name || !email || !departmentId || !roleId}>
               {isSubmitting ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />

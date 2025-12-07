@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,28 +13,42 @@ import {
 } from '@/components/ui/select';
 import { Building2, Loader2, UserPlus, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
+import { Department, Role, User } from '@/types';
 import usersData from '@/lib/mock/users.json';
 import rolesData from '@/lib/mock/roles.json';
-
-const departments = [
-  'Engineering',
-  'Finance',
-  'Human Resources',
-  'Marketing',
-  'Operations',
-  'Sales',
-];
+import departmentsData from '@/lib/mock/departments.json';
 
 export function RegisterPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [department, setDepartment] = useState('');
+  const [departmentId, setDepartmentId] = useState('');
   const [roleId, setRoleId] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
   
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Load departments from localStorage or default
+    const storedDepts = localStorage.getItem('mushya_departments');
+    if (storedDepts) {
+      setDepartments(JSON.parse(storedDepts));
+    } else {
+      setDepartments(departmentsData as Department[]);
+      localStorage.setItem('mushya_departments', JSON.stringify(departmentsData));
+    }
+
+    // Load roles from localStorage or default
+    const storedRoles = localStorage.getItem('mushya_roles');
+    if (storedRoles) {
+      setRoles([...rolesData as Role[], ...JSON.parse(storedRoles)]);
+    } else {
+      setRoles(rolesData as Role[]);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,28 +69,41 @@ export function RegisterPage() {
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     // Check if email already exists
-    const existingUser = usersData.find(u => u.email === email);
+    const storedUsers = localStorage.getItem('mushya_users');
+    const registeredUsers = storedUsers ? JSON.parse(storedUsers) : [];
+    const allUsers = [...usersData as User[], ...registeredUsers];
+    
+    const existingUser = allUsers.find(u => u.email === email);
     if (existingUser) {
       toast.error('Email already registered');
       setIsLoading(false);
       return;
     }
 
-    // Create new user (in real app, this would be an API call)
-    const newUser = {
+    const selectedDept = departments.find(d => d.id === departmentId);
+
+    // Create new user
+    const newUser: User = {
       id: `user_${Date.now()}`,
       name,
       email,
+      avatar: null,
       role_id: roleId,
-      department,
+      department: selectedDept?.name || '',
       status: 'active',
       created_at: new Date().toISOString(),
+      last_login: new Date().toISOString(),
     };
 
-    // Store in localStorage for demo
-    const storedUsers = JSON.parse(localStorage.getItem('mushya_users') || '[]');
-    storedUsers.push(newUser);
-    localStorage.setItem('mushya_users', JSON.stringify(storedUsers));
+    // Store user in localStorage
+    registeredUsers.push(newUser);
+    localStorage.setItem('mushya_users', JSON.stringify(registeredUsers));
+
+    // Store password separately (in real app, this would be hashed on server)
+    const storedPasswords = localStorage.getItem('mushya_passwords');
+    const passwords = storedPasswords ? JSON.parse(storedPasswords) : {};
+    passwords[email] = password;
+    localStorage.setItem('mushya_passwords', JSON.stringify(passwords));
 
     toast.success('Registration successful!', {
       description: 'Please log in with your credentials',
@@ -142,13 +169,13 @@ export function RegisterPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="department">Department</Label>
-                  <Select value={department} onValueChange={setDepartment} required>
+                  <Select value={departmentId} onValueChange={setDepartmentId} required>
                     <SelectTrigger>
                       <SelectValue placeholder="Select" />
                     </SelectTrigger>
                     <SelectContent>
                       {departments.map(dept => (
-                        <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                        <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -161,7 +188,7 @@ export function RegisterPage() {
                       <SelectValue placeholder="Select" />
                     </SelectTrigger>
                     <SelectContent>
-                      {rolesData.map(role => (
+                      {roles.map(role => (
                         <SelectItem key={role.id} value={role.id}>{role.name}</SelectItem>
                       ))}
                     </SelectContent>
