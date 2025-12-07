@@ -1,12 +1,24 @@
+import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { TopNav } from './TopNav';
+import { cn } from '@/lib/utils';
 
 export function MainLayout() {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar />
-      <div className="ml-64 transition-all duration-300">
+      <Sidebar 
+        collapsed={sidebarCollapsed} 
+        onCollapsedChange={setSidebarCollapsed} 
+      />
+      <div 
+        className={cn(
+          'transition-all duration-300',
+          sidebarCollapsed ? 'ml-16' : 'ml-64'
+        )}
+      >
         <TopNav />
         <main className="p-6">
           <Outlet />

@@ -13,7 +13,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Shield, Check } from 'lucide-react';
 
@@ -111,8 +110,8 @@ export function RoleFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh]">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+        <DialogHeader className="shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5 text-primary" />
             {isEditing ? 'Edit Role' : 'Create New Role'}
@@ -124,8 +123,8 @@ export function RoleFormDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 gap-4">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 gap-4">
+          <div className="grid grid-cols-1 gap-4 shrink-0">
             <div className="space-y-2">
               <Label htmlFor="name">Role Name</Label>
               <Input
@@ -148,13 +147,13 @@ export function RoleFormDialog({
             </div>
           </div>
 
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
+          <div className="flex flex-col flex-1 min-h-0">
+            <div className="flex items-center justify-between mb-2 shrink-0">
               <Label>Permissions</Label>
               <Badge variant="secondary">{selectedPermissions.length} selected</Badge>
             </div>
             
-            <ScrollArea className="h-[300px] rounded-lg border border-border p-4">
+            <div className="flex-1 min-h-0 overflow-y-auto rounded-lg border border-border p-4">
               <div className="space-y-6">
                 {Object.entries(permissionsByModule).map(([module, perms]) => (
                   <div key={module} className="space-y-3">
@@ -201,10 +200,10 @@ export function RoleFormDialog({
                   </div>
                 ))}
               </div>
-            </ScrollArea>
+            </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="shrink-0">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>

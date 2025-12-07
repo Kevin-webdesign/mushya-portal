@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -173,9 +173,17 @@ export function LoginPage() {
           </CardContent>
         </Card>
 
-        <p className="text-center text-sm text-muted-foreground mt-6">
-          Demo credentials: <span className="font-mono text-foreground">admin@mushyagroup.com</span> / <span className="font-mono text-foreground">admin123</span>
-        </p>
+        <div className="text-center mt-6 space-y-2">
+          <p className="text-sm text-muted-foreground">
+            Don't have an account?{' '}
+            <Link to="/register" className="text-primary hover:underline font-medium">
+              Register
+            </Link>
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Demo: <span className="font-mono">admin@mushyagroup.com</span> / <span className="font-mono">admin123</span>
+          </p>
+        </div>
       </div>
     </div>
   );
