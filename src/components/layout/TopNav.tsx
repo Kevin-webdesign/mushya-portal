@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import {
@@ -39,9 +39,26 @@ const mockNotifications: Notification[] = [
 export function TopNav() {
   const { user, role, logout } = useAuth();
   const [notifications] = useState<Notification[]>(mockNotifications);
+  const [isDark, setIsDark] = useState(false);
   
   const unreadCount = notifications.filter(n => !n.read).length;
   const initials = user?.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
+
+  useEffect(() => {
+    // Check for stored theme preference
+    const storedTheme = localStorage.getItem('mushya_theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const shouldBeDark = storedTheme === 'dark' || (!storedTheme && prefersDark);
+    setIsDark(shouldBeDark);
+    document.documentElement.classList.toggle('dark', shouldBeDark);
+  }, []);
+
+  const toggleTheme = () => {
+    const newIsDark = !isDark;
+    setIsDark(newIsDark);
+    localStorage.setItem('mushya_theme', newIsDark ? 'dark' : 'light');
+    document.documentElement.classList.toggle('dark', newIsDark);
+  };
 
   return (
     <header className="h-16 bg-card border-b border-border flex items-center justify-between px-6">
@@ -57,7 +74,12 @@ export function TopNav() {
       </div>
 
       {/* Right section */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2">
+        {/* Theme Toggle */}
+        <Button variant="ghost" size="icon" onClick={toggleTheme}>
+          {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+        </Button>
+
         {/* Notifications */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

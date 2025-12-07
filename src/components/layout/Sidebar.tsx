@@ -26,6 +26,11 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface NavItem {
   id: string;
@@ -119,8 +124,12 @@ const navigationItems: NavItem[] = [
   },
 ];
 
-export function Sidebar() {
-  const [collapsed, setCollapsed] = useState(false);
+interface SidebarProps {
+  collapsed: boolean;
+  onCollapsedChange: (collapsed: boolean) => void;
+}
+
+export function Sidebar({ collapsed, onCollapsedChange }: SidebarProps) {
   const [openMenus, setOpenMenus] = useState<string[]>(['users-roles']);
   const location = useLocation();
   const { can } = useAuth();
@@ -157,6 +166,34 @@ export function Sidebar() {
       const accessibleChildren = item.children!.filter(child => can(child.permission));
       if (accessibleChildren.length === 0) return null;
 
+      if (collapsed) {
+        return (
+          <div key={item.id} className="space-y-1">
+            {accessibleChildren.map(child => {
+              const ChildIcon = child.icon;
+              return (
+                <Tooltip key={child.id} delayDuration={0}>
+                  <TooltipTrigger asChild>
+                    <Link
+                      to={child.path!}
+                      className={cn(
+                        'sidebar-item justify-center',
+                        isActive(child.path) && 'active'
+                      )}
+                    >
+                      <ChildIcon className="h-5 w-5 shrink-0" />
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" sideOffset={10}>
+                    {child.label}
+                  </TooltipContent>
+                </Tooltip>
+              );
+            })}
+          </div>
+        );
+      }
+
       return (
         <Collapsible key={item.id} open={isOpen} onOpenChange={() => toggleMenu(item.id)}>
           <CollapsibleTrigger asChild>
@@ -168,16 +205,14 @@ export function Sidebar() {
             >
               <div className="flex items-center gap-3">
                 <Icon className="h-5 w-5 shrink-0" />
-                {!collapsed && <span>{item.label}</span>}
+                <span>{item.label}</span>
               </div>
-              {!collapsed && (
-                <ChevronDown
-                  className={cn(
-                    'h-4 w-4 transition-transform duration-200',
-                    isOpen && 'rotate-180'
-                  )}
-                />
-              )}
+              <ChevronDown
+                className={cn(
+                  'h-4 w-4 transition-transform duration-200',
+                  isOpen && 'rotate-180'
+                )}
+              />
             </button>
           </CollapsibleTrigger>
           <CollapsibleContent className="pl-4 mt-1 space-y-1">
@@ -193,12 +228,30 @@ export function Sidebar() {
                   )}
                 >
                   <ChildIcon className="h-4 w-4 shrink-0" />
-                  {!collapsed && <span className="text-sm">{child.label}</span>}
+                  <span className="text-sm">{child.label}</span>
                 </Link>
               );
             })}
           </CollapsibleContent>
         </Collapsible>
+      );
+    }
+
+    if (collapsed) {
+      return (
+        <Tooltip key={item.id} delayDuration={0}>
+          <TooltipTrigger asChild>
+            <Link
+              to={item.path!}
+              className={cn('sidebar-item justify-center', active && 'active')}
+            >
+              <Icon className="h-5 w-5 shrink-0" />
+            </Link>
+          </TooltipTrigger>
+          <TooltipContent side="right" sideOffset={10}>
+            {item.label}
+          </TooltipContent>
+        </Tooltip>
       );
     }
 
@@ -209,7 +262,7 @@ export function Sidebar() {
         className={cn('sidebar-item', active && 'active')}
       >
         <Icon className="h-5 w-5 shrink-0" />
-        {!collapsed && <span>{item.label}</span>}
+        <span>{item.label}</span>
       </Link>
     );
   };
@@ -222,15 +275,15 @@ export function Sidebar() {
       )}
     >
       {/* Logo */}
-      <div className="h-16 flex items-center justify-between px-4 border-b border-sidebar-border">
-        <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-lg bg-primary flex items-center justify-center">
+      <div className="h-16 flex items-center justify-between px-3 border-b border-sidebar-border">
+        <div className="flex items-center gap-3 overflow-hidden">
+          <div className="h-9 w-9 rounded-lg bg-primary flex items-center justify-center shrink-0">
             <Building2 className="h-5 w-5 text-primary-foreground" />
           </div>
           {!collapsed && (
-            <div className="flex flex-col">
-              <span className="font-semibold text-foreground">Mushya Group</span>
-              <span className="text-xs text-muted-foreground">Internal Portal</span>
+            <div className="flex flex-col min-w-0">
+              <span className="font-semibold text-foreground truncate">Mushya Group</span>
+              <span className="text-xs text-muted-foreground truncate">Internal Portal</span>
             </div>
           )}
         </div>
@@ -246,7 +299,7 @@ export function Sidebar() {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setCollapsed(!collapsed)}
+          onClick={() => onCollapsedChange(!collapsed)}
           className="w-full justify-center text-muted-foreground hover:text-foreground"
         >
           {collapsed ? (

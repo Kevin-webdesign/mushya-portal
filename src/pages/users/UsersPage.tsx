@@ -21,7 +21,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Plus, Search, MoreHorizontal, Pencil, Trash2, Users, UserCheck } from 'lucide-react';
+import { UserFormDialog } from '@/components/users/UserFormDialog';
 import { toast } from 'sonner';
 
 export function UsersPage() {
@@ -29,15 +40,69 @@ export function UsersPage() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
   useEffect(() => {
     const storedUsers = localStorage.getItem('mushya_users');
     const storedRoles = localStorage.getItem('mushya_roles');
     
-    setUsers(storedUsers ? JSON.parse(storedUsers) : usersData as User[]);
+    if (storedUsers) {
+      setUsers(JSON.parse(storedUsers));
+    } else {
+      const initialUsers = usersData as User[];
+      setUsers(initialUsers);
+      localStorage.setItem('mushya_users', JSON.stringify(initialUsers));
+    }
+    
     setRoles(storedRoles ? JSON.parse(storedRoles) : rolesData as Role[]);
     setIsLoading(false);
   }, []);
+
+  const handleSaveUser = (user: User) => {
+    let updatedUsers: User[];
+    
+    if (selectedUser) {
+      updatedUsers = users.map(u => u.id === user.id ? user : u);
+      toast.success('User updated successfully');
+    } else {
+      // Check for duplicate email
+      if (users.some(u => u.email === user.email)) {
+        toast.error('Email already exists');
+        return;
+      }
+      updatedUsers = [...users, user];
+      toast.success('User added successfully');
+    }
+    
+    setUsers(updatedUsers);
+    localStorage.setItem('mushya_users', JSON.stringify(updatedUsers));
+    setIsFormOpen(false);
+    setSelectedUser(null);
+  };
+
+  const handleEditUser = (user: User) => {
+    setSelectedUser(user);
+    setIsFormOpen(true);
+  };
+
+  const handleDeleteClick = (user: User) => {
+    setUserToDelete(user);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!userToDelete) return;
+    
+    const updatedUsers = users.filter(u => u.id !== userToDelete.id);
+    setUsers(updatedUsers);
+    localStorage.setItem('mushya_users', JSON.stringify(updatedUsers));
+    toast.success('User deleted successfully');
+    setDeleteDialogOpen(false);
+    setUserToDelete(null);
+  };
 
   const getRoleName = (roleId: string) => {
     const role = roles.find(r => r.id === roleId);
@@ -66,7 +131,7 @@ export function UsersPage() {
           <h1 className="text-2xl font-bold">Users</h1>
           <p className="text-muted-foreground">Manage user accounts and role assignments</p>
         </div>
-        <Button className="btn-glow">
+        <Button onClick={() => { setSelectedUser(null); setIsFormOpen(true); }} className="btn-glow">
           <Plus className="h-4 w-4 mr-2" />
           Add User
         </Button>
@@ -117,6 +182,12 @@ export function UsersPage() {
                     <TableCell></TableCell>
                   </TableRow>
                 ))
+              ) : filteredUsers.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                    No users found
+                  </TableCell>
+                </TableRow>
               ) : (
                 filteredUsers.map((user) => (
                   <TableRow key={user.id} className="table-row-hover">
@@ -151,15 +222,18 @@ export function UsersPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleEditUser(user)}>
                             <Pencil className="h-4 w-4 mr-2" />
                             Edit
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleEditUser(user)}>
                             <UserCheck className="h-4 w-4 mr-2" />
                             Assign Role
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive focus:text-destructive">
+                          <DropdownMenuItem 
+                            onClick={() => handleDeleteClick(user)}
+                            className="text-destructive focus:text-destructive"
+                          >
                             <Trash2 className="h-4 w-4 mr-2" />
                             Delete
                           </DropdownMenuItem>
@@ -173,6 +247,31 @@ export function UsersPage() {
           </Table>
         </CardContent>
       </Card>
+
+      <UserFormDialog
+        open={isFormOpen}
+        onOpenChange={setIsFormOpen}
+        user={selectedUser}
+        roles={roles}
+        onSave={handleSaveUser}
+      />
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete User</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete {userToDelete?.name}? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
