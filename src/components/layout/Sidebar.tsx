@@ -19,6 +19,7 @@ import {
   ChevronRight,
   ChevronDown,
   Building2,
+  Building,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -38,89 +39,77 @@ interface NavItem {
   icon: React.ElementType;
   path?: string;
   permission: string;
-  children?: NavItem[];
 }
 
-const navigationItems: NavItem[] = [
+interface NavCategory {
+  id: string;
+  label: string;
+  icon: React.ElementType;
+  items: NavItem[];
+}
+
+const navigationCategories: NavCategory[] = [
   {
-    id: 'dashboard',
-    label: 'Dashboard',
+    id: 'overview',
+    label: 'Overview',
     icon: LayoutDashboard,
-    path: '/dashboard',
-    permission: 'dashboard.view',
-  },
-  {
-    id: 'users-roles',
-    label: 'Users & Roles',
-    icon: Users,
-    permission: 'users.view',
-    children: [
-      { id: 'users', label: 'Users', icon: Users, path: '/users', permission: 'users.view' },
-      { id: 'roles', label: 'Roles', icon: Shield, path: '/roles', permission: 'roles.view' },
+    items: [
+      { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', permission: 'dashboard.view' },
     ],
   },
   {
-    id: 'revenue',
-    label: 'Revenue',
+    id: 'user-management',
+    label: 'User Management',
+    icon: Users,
+    items: [
+      { id: 'users', label: 'Users', icon: Users, path: '/users', permission: 'users.view' },
+      { id: 'roles', label: 'Roles', icon: Shield, path: '/roles', permission: 'roles.view' },
+      { id: 'departments', label: 'Departments', icon: Building, path: '/departments', permission: 'users.view' },
+    ],
+  },
+  {
+    id: 'finance',
+    label: 'Finance',
     icon: DollarSign,
-    path: '/revenue',
-    permission: 'revenue.view',
+    items: [
+      { id: 'revenue', label: 'Revenue', icon: DollarSign, path: '/revenue', permission: 'revenue.view' },
+      { id: 'pools', label: 'Pool Management', icon: Wallet, path: '/pools', permission: 'pools.view' },
+      { id: 'budgets', label: 'Budgets', icon: Calculator, path: '/budgets', permission: 'budgets.view' },
+      { id: 'disbursements', label: 'Disbursements', icon: CreditCard, path: '/disbursements', permission: 'disbursements.view' },
+    ],
   },
   {
-    id: 'pools',
-    label: 'Pool Management',
-    icon: Wallet,
-    path: '/pools',
-    permission: 'pools.view',
-  },
-  {
-    id: 'budgets',
-    label: 'Budgets',
-    icon: Calculator,
-    path: '/budgets',
-    permission: 'budgets.view',
-  },
-  {
-    id: 'disbursements',
-    label: 'Disbursements',
-    icon: CreditCard,
-    path: '/disbursements',
-    permission: 'disbursements.view',
-  },
-  {
-    id: 'projects',
-    label: 'Projects',
+    id: 'operations',
+    label: 'Operations',
     icon: FolderKanban,
-    path: '/projects',
-    permission: 'projects.view',
+    items: [
+      { id: 'projects', label: 'Projects', icon: FolderKanban, path: '/projects', permission: 'projects.view' },
+      { id: 'contracts', label: 'Contracts', icon: FileText, path: '/contracts', permission: 'contracts.view' },
+    ],
   },
   {
-    id: 'contracts',
-    label: 'Contracts',
-    icon: FileText,
-    path: '/contracts',
-    permission: 'contracts.view',
-  },
-  {
-    id: 'vault',
-    label: 'Password Vault',
+    id: 'security',
+    label: 'Security',
     icon: KeyRound,
-    path: '/vault',
-    permission: 'vault.view',
+    items: [
+      { id: 'vault', label: 'Password Vault', icon: KeyRound, path: '/vault', permission: 'vault.view' },
+    ],
   },
   {
-    id: 'reports',
-    label: 'Reports',
+    id: 'analytics',
+    label: 'Analytics',
     icon: BarChart3,
-    path: '/reports',
-    permission: 'reports.view',
+    items: [
+      { id: 'reports', label: 'Reports', icon: BarChart3, path: '/reports', permission: 'reports.view' },
+    ],
   },
   {
-    id: 'settings',
-    label: 'Settings',
+    id: 'system',
+    label: 'System',
     icon: Settings,
-    path: '/settings',
-    permission: 'settings.view',
+    items: [
+      { id: 'settings', label: 'Settings', icon: Settings, path: '/settings', permission: 'settings.view' },
+    ],
   },
 ];
 
@@ -130,13 +119,13 @@ interface SidebarProps {
 }
 
 export function Sidebar({ collapsed, onCollapsedChange }: SidebarProps) {
-  const [openMenus, setOpenMenus] = useState<string[]>(['users-roles']);
+  const [openCategories, setOpenCategories] = useState<string[]>(['overview', 'user-management', 'finance']);
   const location = useLocation();
   const { can } = useAuth();
 
-  const toggleMenu = (id: string) => {
-    setOpenMenus(prev =>
-      prev.includes(id) ? prev.filter(m => m !== id) : [...prev, id]
+  const toggleCategory = (id: string) => {
+    setOpenCategories(prev =>
+      prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
     );
   };
 
@@ -145,125 +134,81 @@ export function Sidebar({ collapsed, onCollapsedChange }: SidebarProps) {
     return location.pathname === path || location.pathname.startsWith(path + '/');
   };
 
-  const renderNavItem = (item: NavItem) => {
-    // Check if user has permission
-    if (!can(item.permission)) {
-      // Check if any child has permission
-      if (item.children) {
-        const hasAccessibleChild = item.children.some(child => can(child.permission));
-        if (!hasAccessibleChild) return null;
-      } else {
-        return null;
-      }
-    }
+  const renderCategory = (category: NavCategory) => {
+    const accessibleItems = category.items.filter(item => can(item.permission));
+    if (accessibleItems.length === 0) return null;
 
-    const Icon = item.icon;
-    const hasChildren = item.children && item.children.length > 0;
-    const isOpen = openMenus.includes(item.id);
-    const active = isActive(item.path);
-
-    if (hasChildren) {
-      const accessibleChildren = item.children!.filter(child => can(child.permission));
-      if (accessibleChildren.length === 0) return null;
-
-      if (collapsed) {
-        return (
-          <div key={item.id} className="space-y-1">
-            {accessibleChildren.map(child => {
-              const ChildIcon = child.icon;
-              return (
-                <Tooltip key={child.id} delayDuration={0}>
-                  <TooltipTrigger asChild>
-                    <Link
-                      to={child.path!}
-                      className={cn(
-                        'sidebar-item justify-center',
-                        isActive(child.path) && 'active'
-                      )}
-                    >
-                      <ChildIcon className="h-5 w-5 shrink-0" />
-                    </Link>
-                  </TooltipTrigger>
-                  <TooltipContent side="right" sideOffset={10}>
-                    {child.label}
-                  </TooltipContent>
-                </Tooltip>
-              );
-            })}
-          </div>
-        );
-      }
-
-      return (
-        <Collapsible key={item.id} open={isOpen} onOpenChange={() => toggleMenu(item.id)}>
-          <CollapsibleTrigger asChild>
-            <button
-              className={cn(
-                'sidebar-item w-full justify-between',
-                isOpen && 'bg-sidebar-accent'
-              )}
-            >
-              <div className="flex items-center gap-3">
-                <Icon className="h-5 w-5 shrink-0" />
-                <span>{item.label}</span>
-              </div>
-              <ChevronDown
-                className={cn(
-                  'h-4 w-4 transition-transform duration-200',
-                  isOpen && 'rotate-180'
-                )}
-              />
-            </button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="pl-4 mt-1 space-y-1">
-            {accessibleChildren.map(child => {
-              const ChildIcon = child.icon;
-              return (
-                <Link
-                  key={child.id}
-                  to={child.path!}
-                  className={cn(
-                    'sidebar-item',
-                    isActive(child.path) && 'active'
-                  )}
-                >
-                  <ChildIcon className="h-4 w-4 shrink-0" />
-                  <span className="text-sm">{child.label}</span>
-                </Link>
-              );
-            })}
-          </CollapsibleContent>
-        </Collapsible>
-      );
-    }
+    const isOpen = openCategories.includes(category.id);
+    const CategoryIcon = category.icon;
 
     if (collapsed) {
       return (
-        <Tooltip key={item.id} delayDuration={0}>
-          <TooltipTrigger asChild>
-            <Link
-              to={item.path!}
-              className={cn('sidebar-item justify-center', active && 'active')}
-            >
-              <Icon className="h-5 w-5 shrink-0" />
-            </Link>
-          </TooltipTrigger>
-          <TooltipContent side="right" sideOffset={10}>
-            {item.label}
-          </TooltipContent>
-        </Tooltip>
+        <div key={category.id} className="space-y-1">
+          {accessibleItems.map(item => {
+            const ItemIcon = item.icon;
+            return (
+              <Tooltip key={item.id} delayDuration={0}>
+                <TooltipTrigger asChild>
+                  <Link
+                    to={item.path!}
+                    className={cn(
+                      'sidebar-item justify-center',
+                      isActive(item.path) && 'active'
+                    )}
+                  >
+                    <ItemIcon className="h-5 w-5 shrink-0" />
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="right" sideOffset={10}>
+                  {item.label}
+                </TooltipContent>
+              </Tooltip>
+            );
+          })}
+        </div>
       );
     }
 
     return (
-      <Link
-        key={item.id}
-        to={item.path!}
-        className={cn('sidebar-item', active && 'active')}
-      >
-        <Icon className="h-5 w-5 shrink-0" />
-        <span>{item.label}</span>
-      </Link>
+      <Collapsible key={category.id} open={isOpen} onOpenChange={() => toggleCategory(category.id)}>
+        <CollapsibleTrigger asChild>
+          <button
+            className={cn(
+              'sidebar-item w-full justify-between text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground',
+              isOpen && 'text-foreground'
+            )}
+          >
+            <div className="flex items-center gap-3">
+              <CategoryIcon className="h-4 w-4 shrink-0" />
+              <span>{category.label}</span>
+            </div>
+            <ChevronDown
+              className={cn(
+                'h-3 w-3 transition-transform duration-200',
+                isOpen && 'rotate-180'
+              )}
+            />
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="mt-1 space-y-1">
+          {accessibleItems.map(item => {
+            const ItemIcon = item.icon;
+            return (
+              <Link
+                key={item.id}
+                to={item.path!}
+                className={cn(
+                  'sidebar-item pl-10',
+                  isActive(item.path) && 'active'
+                )}
+              >
+                <ItemIcon className="h-4 w-4 shrink-0" />
+                <span className="text-sm">{item.label}</span>
+              </Link>
+            );
+          })}
+        </CollapsibleContent>
+      </Collapsible>
     );
   };
 
@@ -290,8 +235,8 @@ export function Sidebar({ collapsed, onCollapsedChange }: SidebarProps) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-1">
-        {navigationItems.map(renderNavItem)}
+      <nav className="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-2">
+        {navigationCategories.map(renderCategory)}
       </nav>
 
       {/* Collapse Toggle */}

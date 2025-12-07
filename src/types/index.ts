@@ -4,6 +4,12 @@ export interface Permission {
   module: string;
 }
 
+export interface Department {
+  id: string;
+  name: string;
+  created_at: string;
+}
+
 export interface Role {
   id: string;
   name: string;
