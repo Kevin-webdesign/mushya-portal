@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,26 +12,92 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Plus, Search, FileText, Calendar, DollarSign, AlertCircle, CheckCircle } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Plus, Search, FileText, Calendar, DollarSign, AlertCircle, CheckCircle, MoreHorizontal, Pencil, Trash2, Eye } from 'lucide-react';
+import { toast } from 'sonner';
+import { ContractFormDialog, Contract, ContractMilestone } from '@/components/contracts/ContractFormDialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
-interface Contract {
-  id: string;
-  title: string;
-  vendor: string;
-  value: number;
-  status: 'draft' | 'active' | 'completed' | 'expired' | 'terminated';
-  start_date: string;
-  end_date: string;
-  milestones_completed: number;
-  total_milestones: number;
-}
+const STORAGE_KEY = 'mushya_contracts';
 
-const mockContracts: Contract[] = [
-  { id: '1', title: 'AWS Cloud Services', vendor: 'Amazon Web Services', value: 120000, status: 'active', start_date: '2024-01-01', end_date: '2024-12-31', milestones_completed: 9, total_milestones: 12 },
-  { id: '2', title: 'Security Consulting', vendor: 'SecureIT Corp', value: 85000, status: 'active', start_date: '2024-06-01', end_date: '2025-05-31', milestones_completed: 4, total_milestones: 8 },
-  { id: '3', title: 'Office Lease', vendor: 'Commercial Properties Ltd', value: 240000, status: 'active', start_date: '2023-01-01', end_date: '2025-12-31', milestones_completed: 24, total_milestones: 36 },
-  { id: '4', title: 'Marketing Agency Retainer', vendor: 'Creative Solutions', value: 60000, status: 'completed', start_date: '2024-01-01', end_date: '2024-06-30', milestones_completed: 6, total_milestones: 6 },
-  { id: '5', title: 'HR Software License', vendor: 'WorkDay Inc', value: 45000, status: 'expired', start_date: '2023-01-01', end_date: '2023-12-31', milestones_completed: 4, total_milestones: 4 },
+const defaultContracts: Contract[] = [
+  { 
+    id: '1', 
+    title: 'AWS Cloud Services', 
+    vendor: 'Amazon Web Services',
+    description: 'Cloud infrastructure and hosting services',
+    value: 120000, 
+    status: 'active', 
+    start_date: '2024-01-01', 
+    end_date: '2024-12-31', 
+    milestones_completed: 9, 
+    total_milestones: 12,
+    milestones: [
+      { id: 'm1', name: 'Q1 Payment', description: 'First quarter services', due_date: '2024-03-31', amount: 30000, status: 'completed' },
+      { id: 'm2', name: 'Q2 Payment', description: 'Second quarter services', due_date: '2024-06-30', amount: 30000, status: 'completed' },
+      { id: 'm3', name: 'Q3 Payment', description: 'Third quarter services', due_date: '2024-09-30', amount: 30000, status: 'completed' },
+      { id: 'm4', name: 'Q4 Payment', description: 'Fourth quarter services', due_date: '2024-12-31', amount: 30000, status: 'pending' },
+    ]
+  },
+  { 
+    id: '2', 
+    title: 'Security Consulting', 
+    vendor: 'SecureIT Corp',
+    description: 'Cybersecurity assessment and consulting',
+    value: 85000, 
+    status: 'active', 
+    start_date: '2024-06-01', 
+    end_date: '2025-05-31', 
+    milestones_completed: 4, 
+    total_milestones: 8,
+    milestones: []
+  },
+  { 
+    id: '3', 
+    title: 'Office Lease', 
+    vendor: 'Commercial Properties Ltd',
+    description: 'Office space rental agreement',
+    value: 240000, 
+    status: 'active', 
+    start_date: '2023-01-01', 
+    end_date: '2025-12-31', 
+    milestones_completed: 24, 
+    total_milestones: 36,
+    milestones: []
+  },
+  { 
+    id: '4', 
+    title: 'Marketing Agency Retainer', 
+    vendor: 'Creative Solutions',
+    description: 'Digital marketing and branding services',
+    value: 60000, 
+    status: 'completed', 
+    start_date: '2024-01-01', 
+    end_date: '2024-06-30', 
+    milestones_completed: 6, 
+    total_milestones: 6,
+    milestones: []
+  },
 ];
 
 const statusConfig: Record<string, { color: string; label: string }> = {
@@ -43,8 +109,54 @@ const statusConfig: Record<string, { color: string; label: string }> = {
 };
 
 export function ContractsPage() {
-  const [contracts] = useState<Contract[]>(mockContracts);
+  const [contracts, setContracts] = useState<Contract[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
+  const [deleteContractId, setDeleteContractId] = useState<string | null>(null);
+  const [viewContract, setViewContract] = useState<Contract | null>(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      setContracts(JSON.parse(stored));
+    } else {
+      setContracts(defaultContracts);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultContracts));
+    }
+  }, []);
+
+  const saveContracts = (updated: Contract[]) => {
+    setContracts(updated);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+  };
+
+  const handleSaveContract = (contract: Contract) => {
+    let updated: Contract[];
+    if (selectedContract) {
+      updated = contracts.map(c => c.id === contract.id ? contract : c);
+      toast.success('Contract updated successfully');
+    } else {
+      updated = [...contracts, contract];
+      toast.success('Contract created successfully');
+    }
+    saveContracts(updated);
+    setIsFormOpen(false);
+    setSelectedContract(null);
+  };
+
+  const handleDeleteContract = () => {
+    if (!deleteContractId) return;
+    const updated = contracts.filter(c => c.id !== deleteContractId);
+    saveContracts(updated);
+    toast.success('Contract deleted successfully');
+    setDeleteContractId(null);
+  };
+
+  const handleEditContract = (contract: Contract) => {
+    setSelectedContract(contract);
+    setIsFormOpen(true);
+  };
 
   const totalValue = contracts.reduce((sum, c) => sum + c.value, 0);
   const activeContracts = contracts.filter(c => c.status === 'active').length;
@@ -72,7 +184,7 @@ export function ContractsPage() {
           <h1 className="text-2xl font-bold">Contracts</h1>
           <p className="text-muted-foreground">Manage contracts and track milestones</p>
         </div>
-        <Button className="btn-glow">
+        <Button onClick={() => { setSelectedContract(null); setIsFormOpen(true); }} className="btn-glow">
           <Plus className="h-4 w-4 mr-2" />
           New Contract
         </Button>
@@ -148,15 +260,18 @@ export function ContractsPage() {
                 <TableHead>Milestones</TableHead>
                 <TableHead>Timeline</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead className="w-12"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredContracts.map((contract) => {
-                const milestoneProgress = (contract.milestones_completed / contract.total_milestones) * 100;
+                const milestoneProgress = contract.total_milestones > 0 
+                  ? (contract.milestones_completed / contract.total_milestones) * 100 
+                  : 0;
                 const daysRemaining = getDaysRemaining(contract.end_date);
                 
                 return (
-                  <TableRow key={contract.id} className="table-row-hover cursor-pointer">
+                  <TableRow key={contract.id} className="table-row-hover">
                     <TableCell className="font-medium">{contract.title}</TableCell>
                     <TableCell className="text-muted-foreground">{contract.vendor}</TableCell>
                     <TableCell className="font-semibold">${contract.value.toLocaleString()}</TableCell>
@@ -187,6 +302,32 @@ export function ContractsPage() {
                         {statusConfig[contract.status].label}
                       </Badge>
                     </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => setViewContract(contract)}>
+                            <Eye className="h-4 w-4 mr-2" />
+                            View Details
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleEditContract(contract)}>
+                            <Pencil className="h-4 w-4 mr-2" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => setDeleteContractId(contract.id)}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
                   </TableRow>
                 );
               })}
@@ -194,6 +335,93 @@ export function ContractsPage() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Form Dialog */}
+      <ContractFormDialog
+        open={isFormOpen}
+        onOpenChange={setIsFormOpen}
+        contract={selectedContract}
+        onSave={handleSaveContract}
+      />
+
+      {/* View Dialog */}
+      <Dialog open={!!viewContract} onOpenChange={() => setViewContract(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" />
+              {viewContract?.title}
+            </DialogTitle>
+          </DialogHeader>
+          {viewContract && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Vendor</p>
+                  <p className="font-medium">{viewContract.vendor}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Status</p>
+                  <Badge className={statusConfig[viewContract.status].color}>
+                    {statusConfig[viewContract.status].label}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Value</p>
+                  <p className="font-medium">${viewContract.value.toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Duration</p>
+                  <p className="font-medium">
+                    {new Date(viewContract.start_date).toLocaleDateString()} - {new Date(viewContract.end_date).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+              {viewContract.description && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Description</p>
+                  <p>{viewContract.description}</p>
+                </div>
+              )}
+              {viewContract.milestones && viewContract.milestones.length > 0 && (
+                <div>
+                  <p className="text-sm font-semibold mb-2">Milestones</p>
+                  <div className="space-y-2">
+                    {viewContract.milestones.map((milestone, i) => (
+                      <div key={milestone.id} className="flex items-center gap-3 p-3 bg-muted/50 rounded">
+                        <span className="text-sm font-mono text-muted-foreground">M{i + 1}</span>
+                        <div className="flex-1">
+                          <p className="font-medium">{milestone.name}</p>
+                          <p className="text-sm text-muted-foreground">${milestone.amount.toLocaleString()}</p>
+                        </div>
+                        <Badge variant="outline" className="text-xs">{milestone.status}</Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteContractId} onOpenChange={() => setDeleteContractId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Contract?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the contract and all its milestones.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteContract} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
