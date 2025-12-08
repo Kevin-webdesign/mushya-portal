@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Role, Permission } from '@/types';
 import rolesData from '@/lib/mock/roles.json';
 import permissionsData from '@/lib/mock/permissions.json';
@@ -21,21 +22,19 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Plus, Search, MoreHorizontal, Pencil, Trash2, Shield, Eye } from 'lucide-react';
-import { RoleFormDialog } from '@/components/roles/RoleFormDialog';
 import { RoleDetailDialog } from '@/components/roles/RoleDetailDialog';
 import { toast } from 'sonner';
 
 export function RolesPage() {
+  const navigate = useNavigate();
   const [roles, setRoles] = useState<Role[]>([]);
   const [permissions] = useState<Permission[]>(permissionsData as Permission[]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate loading from localStorage or mock data
     const storedRoles = localStorage.getItem('mushya_roles');
     if (storedRoles) {
       setRoles(JSON.parse(storedRoles));
@@ -45,25 +44,6 @@ export function RolesPage() {
     }
     setIsLoading(false);
   }, []);
-
-  const handleSaveRole = (role: Role) => {
-    let updatedRoles: Role[];
-    
-    if (selectedRole) {
-      // Edit
-      updatedRoles = roles.map(r => r.id === role.id ? role : r);
-      toast.success('Role updated successfully');
-    } else {
-      // Create
-      updatedRoles = [...roles, role];
-      toast.success('Role created successfully');
-    }
-    
-    setRoles(updatedRoles);
-    localStorage.setItem('mushya_roles', JSON.stringify(updatedRoles));
-    setIsFormOpen(false);
-    setSelectedRole(null);
-  };
 
   const handleDeleteRole = (roleId: string) => {
     if (roleId === 'role_superadmin') {
@@ -75,11 +55,6 @@ export function RolesPage() {
     setRoles(updatedRoles);
     localStorage.setItem('mushya_roles', JSON.stringify(updatedRoles));
     toast.success('Role deleted successfully');
-  };
-
-  const handleEditRole = (role: Role) => {
-    setSelectedRole(role);
-    setIsFormOpen(true);
   };
 
   const handleViewRole = (role: Role) => {
@@ -100,7 +75,7 @@ export function RolesPage() {
           <h1 className="text-2xl font-bold">Roles</h1>
           <p className="text-muted-foreground">Manage roles and their permissions</p>
         </div>
-        <Button onClick={() => { setSelectedRole(null); setIsFormOpen(true); }} className="btn-glow">
+        <Button onClick={() => navigate('/roles/new')} className="btn-glow">
           <Plus className="h-4 w-4 mr-2" />
           Create Role
         </Button>
@@ -189,7 +164,7 @@ export function RolesPage() {
                             <Eye className="h-4 w-4 mr-2" />
                             View Details
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleEditRole(role)}>
+                          <DropdownMenuItem onClick={() => navigate(`/roles/edit/${role.id}`)}>
                             <Pencil className="h-4 w-4 mr-2" />
                             Edit
                           </DropdownMenuItem>
@@ -212,15 +187,7 @@ export function RolesPage() {
         </CardContent>
       </Card>
 
-      {/* Dialogs */}
-      <RoleFormDialog
-        open={isFormOpen}
-        onOpenChange={setIsFormOpen}
-        role={selectedRole}
-        permissions={permissions}
-        onSave={handleSaveRole}
-      />
-      
+      {/* Detail Dialog */}
       <RoleDetailDialog
         open={isDetailOpen}
         onOpenChange={setIsDetailOpen}
