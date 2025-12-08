@@ -12,6 +12,7 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { DashboardPage } from "@/pages/dashboard/DashboardPage";
 import { UsersPage } from "@/pages/users/UsersPage";
 import { RolesPage } from "@/pages/roles/RolesPage";
+import { RoleFormPage } from "@/pages/roles/RoleFormPage";
 import { DepartmentsPage } from "@/pages/departments/DepartmentsPage";
 import { RevenuePage } from "@/pages/revenue/RevenuePage";
 import { PoolsPage } from "@/pages/pools/PoolsPage";
@@ -56,6 +57,8 @@ function AppRoutes() {
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="roles" element={<RolesPage />} />
+        <Route path="roles/new" element={<RoleFormPage />} />
+        <Route path="roles/edit/:id" element={<RoleFormPage />} />
         <Route path="departments" element={<DepartmentsPage />} />
         <Route path="revenue" element={<RevenuePage />} />
         <Route path="pools" element={<PoolsPage />} />

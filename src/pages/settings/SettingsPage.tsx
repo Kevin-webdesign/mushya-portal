@@ -1,20 +1,42 @@
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs';
-import { Settings, Bell, Shield, Building2, Save } from 'lucide-react';
+import { Settings, Bell, Shield, Building2, Save, DollarSign, Coins } from 'lucide-react';
 import { toast } from 'sonner';
 
+interface CurrencySettings {
+  defaultCurrency: 'RWF' | 'USD';
+  showBothCurrencies: boolean;
+  exchangeRate: number;
+}
+
 export function SettingsPage() {
+  const [currencySettings, setCurrencySettings] = useState<CurrencySettings>({
+    defaultCurrency: 'RWF',
+    showBothCurrencies: true,
+    exchangeRate: 1300,
+  });
+
+  useEffect(() => {
+    const stored = localStorage.getItem('mushya_currency_settings');
+    if (stored) {
+      setCurrencySettings(JSON.parse(stored));
+    }
+  }, []);
+
   const handleSave = () => {
+    localStorage.setItem('mushya_currency_settings', JSON.stringify(currencySettings));
     toast.success('Settings saved successfully');
   };
 
@@ -30,6 +52,10 @@ export function SettingsPage() {
           <TabsTrigger value="general" className="flex items-center gap-2">
             <Building2 className="h-4 w-4" />
             General
+          </TabsTrigger>
+          <TabsTrigger value="currency" className="flex items-center gap-2">
+            <Coins className="h-4 w-4" />
+            Currency
           </TabsTrigger>
           <TabsTrigger value="notifications" className="flex items-center gap-2">
             <Bell className="h-4 w-4" />
@@ -66,12 +92,12 @@ export function SettingsPage() {
                 </div>
                 <div className="space-y-2">
                   <Label>Phone</Label>
-                  <Input defaultValue="+1 (555) 123-4567" />
+                  <Input defaultValue="+250 788 123 456" />
                 </div>
               </div>
               <div className="space-y-2">
                 <Label>Address</Label>
-                <Input defaultValue="123 Business Park, Suite 100, City, State 12345" />
+                <Input defaultValue="KG 123 St, Kigali, Rwanda" />
               </div>
             </CardContent>
           </Card>
@@ -79,7 +105,7 @@ export function SettingsPage() {
           <Card className="card-elevated">
             <CardHeader>
               <CardTitle>Fiscal Settings</CardTitle>
-              <CardDescription>Configure fiscal year and currency settings</CardDescription>
+              <CardDescription>Configure fiscal year settings</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -88,8 +114,8 @@ export function SettingsPage() {
                   <Input type="date" defaultValue="2024-01-01" />
                 </div>
                 <div className="space-y-2">
-                  <Label>Default Currency</Label>
-                  <Input defaultValue="USD" />
+                  <Label>Fiscal Year End</Label>
+                  <Input type="date" defaultValue="2024-12-31" />
                 </div>
               </div>
             </CardContent>
@@ -99,6 +125,123 @@ export function SettingsPage() {
             <Button onClick={handleSave}>
               <Save className="h-4 w-4 mr-2" />
               Save Changes
+            </Button>
+          </div>
+        </TabsContent>
+
+        {/* Currency Settings */}
+        <TabsContent value="currency" className="space-y-6">
+          <Card className="card-elevated">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5 text-primary" />
+                Currency Configuration
+              </CardTitle>
+              <CardDescription>Set up your preferred currency settings for the portal</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <Label className="text-base font-medium">Default Currency</Label>
+                <RadioGroup
+                  value={currencySettings.defaultCurrency}
+                  onValueChange={(value: 'RWF' | 'USD') => 
+                    setCurrencySettings(prev => ({ ...prev, defaultCurrency: value }))
+                  }
+                  className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+                >
+                  <div className="flex items-center space-x-3 p-4 rounded-lg border border-border bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors">
+                    <RadioGroupItem value="RWF" id="rwf" />
+                    <Label htmlFor="rwf" className="flex items-center gap-2 cursor-pointer flex-1">
+                      <span className="text-2xl">🇷🇼</span>
+                      <div>
+                        <p className="font-medium">Rwandan Franc (RWF)</p>
+                        <p className="text-sm text-muted-foreground">Local currency</p>
+                      </div>
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-3 p-4 rounded-lg border border-border bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors">
+                    <RadioGroupItem value="USD" id="usd" />
+                    <Label htmlFor="usd" className="flex items-center gap-2 cursor-pointer flex-1">
+                      <span className="text-2xl">🇺🇸</span>
+                      <div>
+                        <p className="font-medium">US Dollar (USD)</p>
+                        <p className="text-sm text-muted-foreground">International currency</p>
+                      </div>
+                    </Label>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              <Separator />
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">Show Both Currencies</p>
+                  <p className="text-sm text-muted-foreground">Display amounts in both RWF and USD throughout the portal</p>
+                </div>
+                <Switch
+                  checked={currencySettings.showBothCurrencies}
+                  onCheckedChange={(checked) => 
+                    setCurrencySettings(prev => ({ ...prev, showBothCurrencies: checked }))
+                  }
+                />
+              </div>
+
+              <Separator />
+
+              <div className="space-y-2">
+                <Label>Exchange Rate (1 USD = X RWF)</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    value={currencySettings.exchangeRate}
+                    onChange={(e) => 
+                      setCurrencySettings(prev => ({ ...prev, exchangeRate: parseFloat(e.target.value) || 0 }))
+                    }
+                    className="max-w-[200px]"
+                  />
+                  <span className="text-sm text-muted-foreground">RWF per USD</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  This rate is used for converting between currencies in reports and displays
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="card-elevated">
+            <CardHeader>
+              <CardTitle>Currency Preview</CardTitle>
+              <CardDescription>See how amounts will be displayed</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-4 rounded-lg border border-border bg-muted/30">
+                  <p className="text-sm text-muted-foreground mb-1">Sample Amount (RWF)</p>
+                  <p className="text-xl font-bold">RWF 1,300,000</p>
+                  {currencySettings.showBothCurrencies && (
+                    <p className="text-sm text-muted-foreground">
+                      ≈ ${(1300000 / currencySettings.exchangeRate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+                    </p>
+                  )}
+                </div>
+                <div className="p-4 rounded-lg border border-border bg-muted/30">
+                  <p className="text-sm text-muted-foreground mb-1">Sample Amount (USD)</p>
+                  <p className="text-xl font-bold">$1,000.00</p>
+                  {currencySettings.showBothCurrencies && (
+                    <p className="text-sm text-muted-foreground">
+                      ≈ RWF {(1000 * currencySettings.exchangeRate).toLocaleString()}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="flex justify-end">
+            <Button onClick={handleSave}>
+              <Save className="h-4 w-4 mr-2" />
+              Save Currency Settings
             </Button>
           </div>
         </TabsContent>
