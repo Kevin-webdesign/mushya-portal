@@ -1,31 +1,79 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Plus, Search, FolderKanban, Calendar, DollarSign, AlertTriangle } from 'lucide-react';
+import { Plus, Search, FolderKanban, Calendar, DollarSign, AlertTriangle, Pencil, Trash2, Eye } from 'lucide-react';
 import { toast } from 'sonner';
+import { ProjectFormDialog, Project, ProjectPhase } from '@/components/projects/ProjectFormDialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
-interface Project {
-  id: string;
-  name: string;
-  client: string;
-  budget: number;
-  spent: number;
-  status: 'planning' | 'in_progress' | 'on_hold' | 'completed' | 'cancelled';
-  start_date: string;
-  end_date: string;
-  progress: number;
-  delays: number;
-}
+const STORAGE_KEY = 'mushya_projects';
 
-const mockProjects: Project[] = [
-  { id: '1', name: 'ERP Implementation', client: 'Internal', budget: 500000, spent: 320000, status: 'in_progress', start_date: '2024-01-15', end_date: '2024-12-31', progress: 65, delays: 2 },
-  { id: '2', name: 'Website Redesign', client: 'External - TechCorp', budget: 150000, spent: 142000, status: 'completed', start_date: '2024-03-01', end_date: '2024-10-30', progress: 100, delays: 0 },
-  { id: '3', name: 'Mobile App Development', client: 'External - RetailMax', budget: 250000, spent: 180000, status: 'in_progress', start_date: '2024-06-01', end_date: '2025-03-31', progress: 72, delays: 1 },
-  { id: '4', name: 'Data Migration', client: 'Internal', budget: 80000, spent: 45000, status: 'on_hold', start_date: '2024-08-01', end_date: '2024-12-15', progress: 45, delays: 3 },
-  { id: '5', name: 'Security Audit', client: 'External - FinServ', budget: 60000, spent: 15000, status: 'planning', start_date: '2024-12-01', end_date: '2025-02-28', progress: 10, delays: 0 },
+const defaultProjects: Project[] = [
+  { 
+    id: '1', 
+    name: 'ERP Implementation', 
+    client: 'Internal',
+    description: 'Enterprise resource planning system implementation',
+    budget: 500000, 
+    spent: 320000, 
+    status: 'in_progress', 
+    start_date: '2024-01-15', 
+    end_date: '2024-12-31', 
+    progress: 65, 
+    delays: 2,
+    phases: [
+      { id: 'p1', name: 'Requirements', description: '', status: 'completed', start_date: '2024-01-15', end_date: '2024-02-28' },
+      { id: 'p2', name: 'Development', description: '', status: 'in_progress', start_date: '2024-03-01', end_date: '2024-08-31' },
+      { id: 'p3', name: 'Testing', description: '', status: 'pending', start_date: '2024-09-01', end_date: '2024-11-30' },
+      { id: 'p4', name: 'Deployment', description: '', status: 'pending', start_date: '2024-12-01', end_date: '2024-12-31' },
+    ]
+  },
+  { 
+    id: '2', 
+    name: 'Website Redesign', 
+    client: 'External - TechCorp',
+    description: 'Complete website overhaul with modern design',
+    budget: 150000, 
+    spent: 142000, 
+    status: 'completed', 
+    start_date: '2024-03-01', 
+    end_date: '2024-10-30', 
+    progress: 100, 
+    delays: 0,
+    phases: []
+  },
+  { 
+    id: '3', 
+    name: 'Mobile App Development', 
+    client: 'External - RetailMax',
+    description: 'iOS and Android mobile application',
+    budget: 250000, 
+    spent: 180000, 
+    status: 'in_progress', 
+    start_date: '2024-06-01', 
+    end_date: '2025-03-31', 
+    progress: 72, 
+    delays: 1,
+    phases: []
+  },
 ];
 
 const statusConfig: Record<string, { color: string; label: string }> = {
@@ -37,8 +85,54 @@ const statusConfig: Record<string, { color: string; label: string }> = {
 };
 
 export function ProjectsPage() {
-  const [projects] = useState<Project[]>(mockProjects);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [deleteProjectId, setDeleteProjectId] = useState<string | null>(null);
+  const [viewProject, setViewProject] = useState<Project | null>(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      setProjects(JSON.parse(stored));
+    } else {
+      setProjects(defaultProjects);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultProjects));
+    }
+  }, []);
+
+  const saveProjects = (updated: Project[]) => {
+    setProjects(updated);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+  };
+
+  const handleSaveProject = (project: Project) => {
+    let updated: Project[];
+    if (selectedProject) {
+      updated = projects.map(p => p.id === project.id ? project : p);
+      toast.success('Project updated successfully');
+    } else {
+      updated = [...projects, project];
+      toast.success('Project created successfully');
+    }
+    saveProjects(updated);
+    setIsFormOpen(false);
+    setSelectedProject(null);
+  };
+
+  const handleDeleteProject = () => {
+    if (!deleteProjectId) return;
+    const updated = projects.filter(p => p.id !== deleteProjectId);
+    saveProjects(updated);
+    toast.success('Project deleted successfully');
+    setDeleteProjectId(null);
+  };
+
+  const handleEditProject = (project: Project) => {
+    setSelectedProject(project);
+    setIsFormOpen(true);
+  };
 
   const totalBudget = projects.reduce((sum, p) => sum + p.budget, 0);
   const totalSpent = projects.reduce((sum, p) => sum + p.spent, 0);
@@ -57,7 +151,7 @@ export function ProjectsPage() {
           <h1 className="text-2xl font-bold">Projects</h1>
           <p className="text-muted-foreground">Track project progress, phases, and profitability</p>
         </div>
-        <Button className="btn-glow">
+        <Button onClick={() => { setSelectedProject(null); setIsFormOpen(true); }} className="btn-glow">
           <Plus className="h-4 w-4 mr-2" />
           New Project
         </Button>
@@ -125,7 +219,7 @@ export function ProjectsPage() {
           const profitability = project.budget - project.spent;
           
           return (
-            <Card key={project.id} className="card-elevated hover:border-primary/30 transition-colors cursor-pointer">
+            <Card key={project.id} className="card-elevated hover:border-primary/30 transition-colors">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div>
@@ -179,11 +273,102 @@ export function ProjectsPage() {
                     {new Date(project.start_date).toLocaleDateString()} - {new Date(project.end_date).toLocaleDateString()}
                   </span>
                 </div>
+
+                {/* Actions */}
+                <div className="flex gap-2 pt-2 border-t">
+                  <Button variant="ghost" size="sm" className="flex-1" onClick={() => setViewProject(project)}>
+                    <Eye className="h-4 w-4 mr-1" />
+                    View
+                  </Button>
+                  <Button variant="ghost" size="sm" className="flex-1" onClick={() => handleEditProject(project)}>
+                    <Pencil className="h-4 w-4 mr-1" />
+                    Edit
+                  </Button>
+                  <Button variant="ghost" size="sm" className="text-destructive" onClick={() => setDeleteProjectId(project.id)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           );
         })}
       </div>
+
+      {/* Form Dialog */}
+      <ProjectFormDialog
+        open={isFormOpen}
+        onOpenChange={setIsFormOpen}
+        project={selectedProject}
+        onSave={handleSaveProject}
+      />
+
+      {/* View Dialog */}
+      <Dialog open={!!viewProject} onOpenChange={() => setViewProject(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FolderKanban className="h-5 w-5 text-primary" />
+              {viewProject?.name}
+            </DialogTitle>
+          </DialogHeader>
+          {viewProject && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Client</p>
+                  <p className="font-medium">{viewProject.client}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Status</p>
+                  <Badge variant="outline" className={statusConfig[viewProject.status].color}>
+                    {statusConfig[viewProject.status].label}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Budget</p>
+                  <p className="font-medium">${viewProject.budget.toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Spent</p>
+                  <p className="font-medium">${viewProject.spent.toLocaleString()}</p>
+                </div>
+              </div>
+              {viewProject.phases && viewProject.phases.length > 0 && (
+                <div>
+                  <p className="text-sm font-semibold mb-2">Phases</p>
+                  <div className="space-y-2">
+                    {viewProject.phases.map((phase, i) => (
+                      <div key={phase.id} className="flex items-center gap-3 p-2 bg-muted/50 rounded">
+                        <span className="text-sm font-mono text-muted-foreground">#{i + 1}</span>
+                        <span className="flex-1">{phase.name}</span>
+                        <Badge variant="outline" className="text-xs">{phase.status}</Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteProjectId} onOpenChange={() => setDeleteProjectId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Project?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the project and all its data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteProject} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
