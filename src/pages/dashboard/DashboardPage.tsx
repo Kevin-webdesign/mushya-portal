@@ -3,17 +3,22 @@ import { RevenueChart, PoolDistributionChart, BudgetComparisonChart } from '@/co
 import { PendingRequestsWidget } from '@/components/dashboard/PendingRequestsWidget';
 import { MilestoneTracker } from '@/components/dashboard/MilestoneTracker';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCurrency } from '@/hooks/useCurrency';
 import {
   DollarSign,
   Wallet,
   TrendingUp,
   FileCheck,
-  Users,
-  FolderKanban,
 } from 'lucide-react';
 
 export function DashboardPage() {
   const { user, can } = useAuth();
+  const { formatAmount, settings } = useCurrency();
+
+  // Sample values in USD - will be converted based on currency settings
+  const totalRevenue = 2400000;
+  const poolBalance = 890000;
+  const budgetRemaining = 520000;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -28,7 +33,7 @@ export function DashboardPage() {
         {can('dashboard.widgets.revenue') && (
           <StatCard
             title="Total Revenue"
-            value="$2.4M"
+            value={formatAmount(totalRevenue, 'USD')}
             change="+12.5% from last month"
             changeType="positive"
             icon={DollarSign}
@@ -38,7 +43,7 @@ export function DashboardPage() {
         {can('dashboard.widgets.pools') && (
           <StatCard
             title="Pool Balance"
-            value="$890K"
+            value={formatAmount(poolBalance, 'USD')}
             change="5 active pools"
             changeType="neutral"
             icon={Wallet}
@@ -49,7 +54,7 @@ export function DashboardPage() {
           <StatCard
             title="Budget Utilized"
             value="68%"
-            change="$520K remaining"
+            change={`${formatAmount(budgetRemaining, 'USD')} remaining`}
             changeType="neutral"
             icon={TrendingUp}
             iconColor="text-warning"
