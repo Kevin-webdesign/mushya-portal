@@ -23,7 +23,7 @@ export interface User {
   email: string;
   name: string;
   avatar: string | null;
-  role_id: string;
+  role_ids: string[]; // Changed from role_id to role_ids for multi-role support
   department: string;
   status: 'active' | 'inactive' | 'suspended';
   created_at: string;
@@ -32,7 +32,7 @@ export interface User {
 
 export interface AuthState {
   user: User | null;
-  role: Role | null;
+  roles: Role[]; // Changed from single role to array of roles
   isAuthenticated: boolean;
   isLoading: boolean;
 }

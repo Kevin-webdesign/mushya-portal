@@ -35,6 +35,14 @@ import { Plus, Search, MoreHorizontal, Pencil, Trash2, Users, UserCheck } from '
 import { UserFormDialog } from '@/components/users/UserFormDialog';
 import { toast } from 'sonner';
 
+// Helper to migrate old user format
+const migrateUser = (user: any): User => {
+  if (user.role_id && !user.role_ids) {
+    return { ...user, role_ids: [user.role_id] };
+  }
+  return user;
+};
+
 export function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
@@ -50,9 +58,9 @@ export function UsersPage() {
     const storedRoles = localStorage.getItem('mushya_roles');
     
     if (storedUsers) {
-      setUsers(JSON.parse(storedUsers));
+      setUsers(JSON.parse(storedUsers).map(migrateUser));
     } else {
-      const initialUsers = usersData as User[];
+      const initialUsers = (usersData as any[]).map(migrateUser);
       setUsers(initialUsers);
       localStorage.setItem('mushya_users', JSON.stringify(initialUsers));
     }
@@ -104,9 +112,10 @@ export function UsersPage() {
     setUserToDelete(null);
   };
 
-  const getRoleName = (roleId: string) => {
-    const role = roles.find(r => r.id === roleId);
-    return role?.name || 'Unknown';
+  const getRoleNames = (roleIds: string[]) => {
+    return roleIds
+      .map(id => roles.find(r => r.id === id)?.name)
+      .filter(Boolean);
   };
 
   const getStatusBadge = (status: string) => {
@@ -164,7 +173,7 @@ export function UsersPage() {
               <TableRow>
                 <TableHead>User</TableHead>
                 <TableHead>Department</TableHead>
-                <TableHead>Role</TableHead>
+                <TableHead>Roles</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Last Login</TableHead>
                 <TableHead className="w-12"></TableHead>
@@ -206,9 +215,13 @@ export function UsersPage() {
                     </TableCell>
                     <TableCell>{user.department}</TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="text-primary border-primary/30">
-                        {getRoleName(user.role_id)}
-                      </Badge>
+                      <div className="flex flex-wrap gap-1">
+                        {getRoleNames(user.role_ids || []).map((roleName, idx) => (
+                          <Badge key={idx} variant="outline" className="text-primary border-primary/30">
+                            {roleName}
+                          </Badge>
+                        ))}
+                      </div>
                     </TableCell>
                     <TableCell>{getStatusBadge(user.status)}</TableCell>
                     <TableCell className="text-muted-foreground">
@@ -228,7 +241,7 @@ export function UsersPage() {
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleEditUser(user)}>
                             <UserCheck className="h-4 w-4 mr-2" />
-                            Assign Role
+                            Assign Roles
                           </DropdownMenuItem>
                           <DropdownMenuItem 
                             onClick={() => handleDeleteClick(user)}
