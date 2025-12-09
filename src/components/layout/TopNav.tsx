@@ -37,7 +37,7 @@ const mockNotifications: Notification[] = [
 ];
 
 export function TopNav() {
-  const { user, roles, logout } = useAuth();
+  const { user, role, logout } = useAuth();
   const [notifications] = useState<Notification[]>(mockNotifications);
   const [isDark, setIsDark] = useState(false);
   
@@ -130,7 +130,7 @@ export function TopNav() {
               </Avatar>
               <div className="flex flex-col items-start text-sm">
                 <span className="font-medium">{user?.name}</span>
-                <span className="text-xs text-muted-foreground">{roles.map(r => r.name).join(', ') || 'No role'}</span>
+                <span className="text-xs text-muted-foreground">{role?.name}</span>
               </div>
             </Button>
           </DropdownMenuTrigger>

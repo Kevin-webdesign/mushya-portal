@@ -12,24 +12,31 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs';
-import { Settings, Bell, Shield, Building2, Save, DollarSign, Coins, RefreshCw } from 'lucide-react';
+import { Settings, Bell, Shield, Building2, Save, DollarSign, Coins } from 'lucide-react';
 import { toast } from 'sonner';
-import { useCurrency } from '@/hooks/useCurrency';
+
+interface CurrencySettings {
+  defaultCurrency: 'RWF' | 'USD';
+  showBothCurrencies: boolean;
+  exchangeRate: number;
+}
 
 export function SettingsPage() {
-  const { settings: currencySettings, updateSettings } = useCurrency();
-  const [localSettings, setLocalSettings] = useState(currencySettings);
+  const [currencySettings, setCurrencySettings] = useState<CurrencySettings>({
+    defaultCurrency: 'RWF',
+    showBothCurrencies: true,
+    exchangeRate: 1300,
+  });
 
   useEffect(() => {
-    setLocalSettings(currencySettings);
-  }, [currencySettings]);
-
-  const handleSaveCurrency = () => {
-    updateSettings(localSettings);
-    toast.success('Currency settings saved - all financial displays updated');
-  };
+    const stored = localStorage.getItem('mushya_currency_settings');
+    if (stored) {
+      setCurrencySettings(JSON.parse(stored));
+    }
+  }, []);
 
   const handleSave = () => {
+    localStorage.setItem('mushya_currency_settings', JSON.stringify(currencySettings));
     toast.success('Settings saved successfully');
   };
 
@@ -130,17 +137,15 @@ export function SettingsPage() {
                 <DollarSign className="h-5 w-5 text-primary" />
                 Currency Configuration
               </CardTitle>
-              <CardDescription>
-                Set up your preferred currency settings. Changes apply system-wide to all financial displays.
-              </CardDescription>
+              <CardDescription>Set up your preferred currency settings for the portal</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-4">
                 <Label className="text-base font-medium">Default Currency</Label>
                 <RadioGroup
-                  value={localSettings.defaultCurrency}
+                  value={currencySettings.defaultCurrency}
                   onValueChange={(value: 'RWF' | 'USD') => 
-                    setLocalSettings(prev => ({ ...prev, defaultCurrency: value }))
+                    setCurrencySettings(prev => ({ ...prev, defaultCurrency: value }))
                   }
                   className="grid grid-cols-1 sm:grid-cols-2 gap-4"
                 >
@@ -175,9 +180,9 @@ export function SettingsPage() {
                   <p className="text-sm text-muted-foreground">Display amounts in both RWF and USD throughout the portal</p>
                 </div>
                 <Switch
-                  checked={localSettings.showBothCurrencies}
+                  checked={currencySettings.showBothCurrencies}
                   onCheckedChange={(checked) => 
-                    setLocalSettings(prev => ({ ...prev, showBothCurrencies: checked }))
+                    setCurrencySettings(prev => ({ ...prev, showBothCurrencies: checked }))
                   }
                 />
               </div>
@@ -189,9 +194,9 @@ export function SettingsPage() {
                 <div className="flex items-center gap-2">
                   <Input
                     type="number"
-                    value={localSettings.exchangeRate}
+                    value={currencySettings.exchangeRate}
                     onChange={(e) => 
-                      setLocalSettings(prev => ({ ...prev, exchangeRate: parseFloat(e.target.value) || 0 }))
+                      setCurrencySettings(prev => ({ ...prev, exchangeRate: parseFloat(e.target.value) || 0 }))
                     }
                     className="max-w-[200px]"
                   />
@@ -207,41 +212,25 @@ export function SettingsPage() {
           <Card className="card-elevated">
             <CardHeader>
               <CardTitle>Currency Preview</CardTitle>
-              <CardDescription>See how amounts will be displayed across the system</CardDescription>
+              <CardDescription>See how amounts will be displayed</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="p-4 rounded-lg border border-border bg-muted/30">
                   <p className="text-sm text-muted-foreground mb-1">Sample Amount (RWF)</p>
-                  <p className="text-xl font-bold">
-                    {localSettings.defaultCurrency === 'RWF' 
-                      ? 'RWF 1,300,000'
-                      : `$${(1300000 / localSettings.exchangeRate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                    }
-                  </p>
-                  {localSettings.showBothCurrencies && (
+                  <p className="text-xl font-bold">RWF 1,300,000</p>
+                  {currencySettings.showBothCurrencies && (
                     <p className="text-sm text-muted-foreground">
-                      {localSettings.defaultCurrency === 'RWF'
-                        ? `≈ $${(1300000 / localSettings.exchangeRate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD`
-                        : `≈ RWF 1,300,000`
-                      }
+                      ≈ ${(1300000 / currencySettings.exchangeRate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
                     </p>
                   )}
                 </div>
                 <div className="p-4 rounded-lg border border-border bg-muted/30">
                   <p className="text-sm text-muted-foreground mb-1">Sample Amount (USD)</p>
-                  <p className="text-xl font-bold">
-                    {localSettings.defaultCurrency === 'USD' 
-                      ? '$1,000.00'
-                      : `RWF ${(1000 * localSettings.exchangeRate).toLocaleString()}`
-                    }
-                  </p>
-                  {localSettings.showBothCurrencies && (
+                  <p className="text-xl font-bold">$1,000.00</p>
+                  {currencySettings.showBothCurrencies && (
                     <p className="text-sm text-muted-foreground">
-                      {localSettings.defaultCurrency === 'USD'
-                        ? `≈ RWF ${(1000 * localSettings.exchangeRate).toLocaleString()}`
-                        : '≈ $1,000.00 USD'
-                      }
+                      ≈ RWF {(1000 * currencySettings.exchangeRate).toLocaleString()}
                     </p>
                   )}
                 </div>
@@ -249,12 +238,8 @@ export function SettingsPage() {
             </CardContent>
           </Card>
 
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setLocalSettings(currencySettings)}>
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Reset
-            </Button>
-            <Button onClick={handleSaveCurrency}>
+          <div className="flex justify-end">
+            <Button onClick={handleSave}>
               <Save className="h-4 w-4 mr-2" />
               Save Currency Settings
             </Button>

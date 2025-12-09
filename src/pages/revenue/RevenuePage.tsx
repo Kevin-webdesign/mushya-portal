@@ -23,7 +23,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Plus, Search, DollarSign, ArrowUpRight, Eye } from 'lucide-react';
 import { toast } from 'sonner';
-import { useCurrency } from '@/hooks/useCurrency';
 
 interface RevenueEntry {
   id: string;
@@ -47,7 +46,6 @@ export function RevenuePage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isAllocationOpen, setIsAllocationOpen] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<RevenueEntry | null>(null);
-  const { formatAmount, formatAmountWithBoth } = useCurrency();
 
   const totalRevenue = revenue.reduce((sum, r) => sum + r.amount, 0);
   const allocatedRevenue = revenue.filter(r => r.allocated).reduce((sum, r) => sum + r.amount, 0);
@@ -60,16 +58,6 @@ export function RevenuePage() {
   const handleViewAllocation = (entry: RevenueEntry) => {
     setSelectedEntry(entry);
     setIsAllocationOpen(true);
-  };
-
-  const renderAmount = (amount: number) => {
-    const { primary, secondary } = formatAmountWithBoth(amount, 'USD');
-    return (
-      <div>
-        <span className="font-semibold">{primary}</span>
-        {secondary && <span className="text-xs text-muted-foreground block">{secondary}</span>}
-      </div>
-    );
   };
 
   return (
@@ -91,7 +79,7 @@ export function RevenuePage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Total Revenue</p>
-              {renderAmount(totalRevenue)}
+              <p className="text-2xl font-bold">${totalRevenue.toLocaleString()}</p>
             </div>
             <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
               <DollarSign className="h-5 w-5 text-primary" />
@@ -102,7 +90,7 @@ export function RevenuePage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Allocated</p>
-              {renderAmount(allocatedRevenue)}
+              <p className="text-2xl font-bold">${allocatedRevenue.toLocaleString()}</p>
             </div>
             <div className="h-10 w-10 rounded-lg bg-success/10 flex items-center justify-center">
               <ArrowUpRight className="h-5 w-5 text-success" />
@@ -113,7 +101,7 @@ export function RevenuePage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Pending Allocation</p>
-              {renderAmount(pendingRevenue)}
+              <p className="text-2xl font-bold">${pendingRevenue.toLocaleString()}</p>
             </div>
             <Badge variant="secondary">{revenue.filter(r => !r.allocated).length} entries</Badge>
           </div>
@@ -163,8 +151,8 @@ export function RevenuePage() {
                   </TableCell>
                   <TableCell className="font-medium">{entry.source}</TableCell>
                   <TableCell className="text-muted-foreground">{entry.description}</TableCell>
-                  <TableCell className="text-right">
-                    {renderAmount(entry.amount)}
+                  <TableCell className="text-right font-semibold">
+                    ${entry.amount.toLocaleString()}
                   </TableCell>
                   <TableCell>
                     <Badge variant={entry.allocated ? 'default' : 'secondary'}>
@@ -223,7 +211,7 @@ export function RevenuePage() {
           <DialogHeader>
             <DialogTitle>Allocation Preview</DialogTitle>
             <DialogDescription>
-              Revenue of {formatAmount(selectedEntry?.amount || 0, 'USD')} from {selectedEntry?.source}
+              Revenue of ${selectedEntry?.amount.toLocaleString()} from {selectedEntry?.source}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
@@ -233,20 +221,17 @@ export function RevenuePage() {
               { pool: 'Development', percent: 25 },
               { pool: 'Marketing', percent: 12 },
               { pool: 'Reserve', percent: 8 },
-            ].map((allocation) => {
-              const allocatedAmount = (selectedEntry?.amount || 0) * allocation.percent / 100;
-              const { primary, secondary } = formatAmountWithBoth(allocatedAmount, 'USD');
-              return (
-                <div key={allocation.pool} className="flex items-center justify-between p-3 rounded-lg bg-muted">
-                  <span className="font-medium">{allocation.pool}</span>
-                  <div className="text-right">
-                    <p className="font-semibold">{primary}</p>
-                    {secondary && <p className="text-xs text-muted-foreground">{secondary}</p>}
-                    <p className="text-xs text-muted-foreground">{allocation.percent}%</p>
-                  </div>
+            ].map((allocation) => (
+              <div key={allocation.pool} className="flex items-center justify-between p-3 rounded-lg bg-muted">
+                <span className="font-medium">{allocation.pool}</span>
+                <div className="text-right">
+                  <p className="font-semibold">
+                    ${((selectedEntry?.amount || 0) * allocation.percent / 100).toLocaleString()}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{allocation.percent}%</p>
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsAllocationOpen(false)}>Close</Button>
