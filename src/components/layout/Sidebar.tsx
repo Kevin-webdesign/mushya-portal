@@ -63,6 +63,7 @@ const navigationCategories: NavCategory[] = [
     items: [
       { id: 'users', label: 'Users', icon: Users, path: '/users', permission: 'users.view' },
       { id: 'roles', label: 'Roles', icon: Shield, path: '/roles', permission: 'roles.view' },
+      { id: 'departments', label: 'Departments', icon: Building2, path: '/departments', permission: 'departments.view' },
     ],
   },
   {

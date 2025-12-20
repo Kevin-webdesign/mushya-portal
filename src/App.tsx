@@ -23,6 +23,7 @@ import { ContractsPage } from "@/pages/contracts/ContractsPage";
 import { VaultPage } from "@/pages/vault/VaultPage";
 import { ReportsPage } from "@/pages/reports/ReportsPage";
 import { SettingsPage } from "@/pages/settings/SettingsPage";
+import { DepartmentsPage } from "@/pages/departments/DepartmentsPage";
 
 const queryClient = new QueryClient();
 
@@ -59,6 +60,7 @@ function AppRoutes() {
         <Route path="roles" element={<RolesPage />} />
         <Route path="roles/new" element={<RoleFormPage />} />
         <Route path="roles/edit/:id" element={<RoleFormPage />} />
+        <Route path="departments" element={<DepartmentsPage />} />
         <Route path="revenue" element={<RevenuePage />} />
         <Route path="pools" element={<PoolsPage />} />
         <Route path="budgets" element={<BudgetsPage />} />
