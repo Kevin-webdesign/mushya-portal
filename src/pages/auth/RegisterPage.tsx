@@ -88,7 +88,7 @@ export function RegisterPage() {
       name,
       email,
       avatar: null,
-      role_id: roleId,
+      role_ids: [roleId],
       department: selectedDept?.name || '',
       status: 'active',
       created_at: new Date().toISOString(),
