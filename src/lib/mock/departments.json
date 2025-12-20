@@ -1,0 +1,8 @@
+[
+  { "id": "1", "name": "IT", "code": "IT", "head": "John Doe", "budget": 150000, "status": "active" },
+  { "id": "2", "name": "Marketing", "code": "MKT", "head": "Jane Smith", "budget": 120000, "status": "active" },
+  { "id": "3", "name": "Human Resources", "code": "HR", "head": "Emily Brown", "budget": 80000, "status": "active" },
+  { "id": "4", "name": "Operations", "code": "OPS", "head": "Michael Johnson", "budget": 200000, "status": "active" },
+  { "id": "5", "name": "Finance", "code": "FIN", "head": "Sarah Wilson", "budget": 90000, "status": "active" },
+  { "id": "6", "name": "Sales", "code": "SLS", "head": "David Lee", "budget": 175000, "status": "active" }
+]

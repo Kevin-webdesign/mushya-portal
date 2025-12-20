@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/select';
 import { Plus, Search, Calculator, CheckCircle, Clock, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { BudgetFormDialog } from '@/components/budgets/BudgetFormDialog';
 
 interface Budget {
   id: string;
@@ -30,12 +31,13 @@ interface Budget {
   spent: number;
   status: 'draft' | 'pending_finance' | 'pending_md' | 'pending_board' | 'approved' | 'rejected';
   created_at: string;
+  description?: string;
 }
 
 const mockBudgets: Budget[] = [
   { id: '1', department: 'IT', fiscal_year: '2024', amount: 150000, spent: 95000, status: 'approved', created_at: '2024-01-15' },
   { id: '2', department: 'Marketing', fiscal_year: '2024', amount: 120000, spent: 98000, status: 'approved', created_at: '2024-01-15' },
-  { id: '3', department: 'HR', fiscal_year: '2024', amount: 80000, spent: 45000, status: 'pending_finance', created_at: '2024-11-20' },
+  { id: '3', department: 'Human Resources', fiscal_year: '2024', amount: 80000, spent: 45000, status: 'pending_finance', created_at: '2024-11-20' },
   { id: '4', department: 'Operations', fiscal_year: '2024', amount: 200000, spent: 145000, status: 'pending_md', created_at: '2024-11-18' },
   { id: '5', department: 'Finance', fiscal_year: '2024', amount: 90000, spent: 72000, status: 'pending_board', created_at: '2024-11-15' },
 ];
@@ -50,9 +52,11 @@ const statusConfig: Record<string, { label: string; icon: typeof CheckCircle; va
 };
 
 export function BudgetsPage() {
-  const [budgets] = useState<Budget[]>(mockBudgets);
+  const [budgets, setBudgets] = useState<Budget[]>(mockBudgets);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
 
   const totalBudget = budgets.reduce((sum, b) => sum + b.amount, 0);
   const totalSpent = budgets.reduce((sum, b) => sum + b.spent, 0);
@@ -64,6 +68,19 @@ export function BudgetsPage() {
     return matchesSearch && matchesStatus;
   });
 
+  const handleOpenDialog = (budget?: Budget) => {
+    setEditingBudget(budget || null);
+    setDialogOpen(true);
+  };
+
+  const handleSubmitBudget = (budget: Budget) => {
+    if (editingBudget) {
+      setBudgets(prev => prev.map(b => b.id === budget.id ? budget : b));
+    } else {
+      setBudgets(prev => [...prev, budget]);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -71,7 +88,7 @@ export function BudgetsPage() {
           <h1 className="text-2xl font-bold">Budgets</h1>
           <p className="text-muted-foreground">Department budget requests and approvals</p>
         </div>
-        <Button className="btn-glow">
+        <Button className="btn-glow" onClick={() => handleOpenDialog()}>
           <Plus className="h-4 w-4 mr-2" />
           Create Budget
         </Button>
@@ -205,6 +222,13 @@ export function BudgetsPage() {
           </Table>
         </CardContent>
       </Card>
+
+      <BudgetFormDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        budget={editingBudget}
+        onSubmit={handleSubmitBudget}
+      />
     </div>
   );
 }
