@@ -15,12 +15,12 @@ interface AuthContextType extends AuthState {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Helper to migrate old user format (role_id) to new format (role_ids)
+// Helper to migrate old user format (role_ids) to new format (role_id)
 const migrateUser = (user: any): User => {
-  if (user.role_id && !user.role_ids) {
+  if (user.role_ids && !user.role_id) {
     return {
       ...user,
-      role_ids: [user.role_id],
+      role_id: user.role_ids[0] || '',
     };
   }
   return user;
@@ -54,7 +54,7 @@ const getUserPassword = (email: string): string | null => {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AuthState>({
     user: null,
-    roles: [],
+    role: null,
     isAuthenticated: false,
     isLoading: true,
   });
@@ -66,10 +66,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (storedUser) {
       const user = migrateUser(JSON.parse(storedUser)) as User;
       const allRoles = getAllRoles();
-      const userRoles = allRoles.filter(r => user.role_ids.includes(r.id));
+      const userRole = allRoles.find(r => r.id === user.role_id) || null;
       setState({
         user,
-        roles: userRoles,
+        role: userRole,
         isAuthenticated: true,
         isLoading: false,
       });
@@ -110,11 +110,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     if (otp === '123456' && pendingUser) {
       const allRoles = getAllRoles();
-      const userRoles = allRoles.filter(r => pendingUser.role_ids.includes(r.id));
+      const userRole = allRoles.find(r => r.id === pendingUser.role_id) || null;
       localStorage.setItem('mushya_user', JSON.stringify(pendingUser));
       setState({
         user: pendingUser,
-        roles: userRoles,
+        role: userRole,
         isAuthenticated: true,
         isLoading: false,
       });
@@ -128,20 +128,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem('mushya_user');
     setState({
       user: null,
-      roles: [],
+      role: null,
       isAuthenticated: false,
       isLoading: false,
     });
   }, []);
 
-  // Aggregate all permissions from all assigned roles
+  // Get all permissions from the user's role
   const allPermissions = useMemo(() => {
-    const permissions = new Set<string>();
-    state.roles.forEach(role => {
-      role.permissions.forEach(p => permissions.add(p));
-    });
-    return Array.from(permissions);
-  }, [state.roles]);
+    return state.role?.permissions || [];
+  }, [state.role]);
 
   const can = useCallback((permission: string): boolean => {
     return allPermissions.includes(permission);
