@@ -19,7 +19,6 @@ import {
   ChevronRight,
   ChevronDown,
   Building2,
-  Building,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -64,7 +63,6 @@ const navigationCategories: NavCategory[] = [
     items: [
       { id: 'users', label: 'Users', icon: Users, path: '/users', permission: 'users.view' },
       { id: 'roles', label: 'Roles', icon: Shield, path: '/roles', permission: 'roles.view' },
-      { id: 'departments', label: 'Departments', icon: Building, path: '/departments', permission: 'users.view' },
     ],
   },
   {

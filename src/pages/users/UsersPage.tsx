@@ -31,14 +31,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Plus, Search, MoreHorizontal, Pencil, Trash2, Users, UserCheck } from 'lucide-react';
+import { Plus, Search, MoreHorizontal, Pencil, Trash2, Users } from 'lucide-react';
 import { UserFormDialog } from '@/components/users/UserFormDialog';
 import { toast } from 'sonner';
 
-// Helper to migrate old user format
+// Helper to migrate old user format (role_ids to role_id)
 const migrateUser = (user: any): User => {
-  if (user.role_id && !user.role_ids) {
-    return { ...user, role_ids: [user.role_id] };
+  if (user.role_ids && !user.role_id) {
+    return { ...user, role_id: user.role_ids[0] || '' };
   }
   return user;
 };
@@ -112,10 +112,8 @@ export function UsersPage() {
     setUserToDelete(null);
   };
 
-  const getRoleNames = (roleIds: string[]) => {
-    return roleIds
-      .map(id => roles.find(r => r.id === id)?.name)
-      .filter(Boolean);
+  const getRoleName = (roleId: string) => {
+    return roles.find(r => r.id === roleId)?.name || 'Unknown';
   };
 
   const getStatusBadge = (status: string) => {
@@ -173,7 +171,7 @@ export function UsersPage() {
               <TableRow>
                 <TableHead>User</TableHead>
                 <TableHead>Department</TableHead>
-                <TableHead>Roles</TableHead>
+                <TableHead>Role</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Last Login</TableHead>
                 <TableHead className="w-12"></TableHead>
@@ -215,13 +213,9 @@ export function UsersPage() {
                     </TableCell>
                     <TableCell>{user.department}</TableCell>
                     <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {getRoleNames(user.role_ids || []).map((roleName, idx) => (
-                          <Badge key={idx} variant="outline" className="text-primary border-primary/30">
-                            {roleName}
-                          </Badge>
-                        ))}
-                      </div>
+                      <Badge variant="outline" className="text-primary border-primary/30">
+                        {getRoleName(user.role_id)}
+                      </Badge>
                     </TableCell>
                     <TableCell>{getStatusBadge(user.status)}</TableCell>
                     <TableCell className="text-muted-foreground">
@@ -238,10 +232,6 @@ export function UsersPage() {
                           <DropdownMenuItem onClick={() => handleEditUser(user)}>
                             <Pencil className="h-4 w-4 mr-2" />
                             Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleEditUser(user)}>
-                            <UserCheck className="h-4 w-4 mr-2" />
-                            Assign Roles
                           </DropdownMenuItem>
                           <DropdownMenuItem 
                             onClick={() => handleDeleteClick(user)}

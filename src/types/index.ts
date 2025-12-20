@@ -4,12 +4,6 @@ export interface Permission {
   module: string;
 }
 
-export interface Department {
-  id: string;
-  name: string;
-  created_at: string;
-}
-
 export interface Role {
   id: string;
   name: string;
@@ -23,7 +17,7 @@ export interface User {
   email: string;
   name: string;
   avatar: string | null;
-  role_ids: string[]; // Changed from role_id to role_ids for multi-role support
+  role_id: string;
   department: string;
   status: 'active' | 'inactive' | 'suspended';
   created_at: string;
@@ -32,7 +26,7 @@ export interface User {
 
 export interface AuthState {
   user: User | null;
-  roles: Role[]; // Changed from single role to array of roles
+  role: Role | null;
   isAuthenticated: boolean;
   isLoading: boolean;
 }
